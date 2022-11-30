@@ -18,6 +18,8 @@ from argparse import ArgumentParser
 from monitor import monitor_qlen
 import termcolor as T
 
+from helper import avg, stdev
+
 import sys
 import os
 import math
@@ -148,15 +150,13 @@ def start_ping(net):
 
 
 def get_time_helper(h1, h2):
-    total = 0
+    time_samples = []
     # sample the transfer time 3 times
     fetch = "curl -o /dev/null -s -w %{time_total} "+h1.IP()+"/http/index.html"
     for i in range(3):
-        total += float(h2.popen(fetch).communicate()[0])
+        time_samples.append(float(h2.popen(fetch).communicate()[0]))
 
-    average = total/3
-
-    return average
+    return avg(time_samples)
 
 
 def bufferbloat():
@@ -187,7 +187,7 @@ def bufferbloat():
     # number may be 1 or 2.  Ensure you use the correct number.
 
     qmon = start_qmon(iface='s0-eth2',
-                     outfile='%s/q.txt' % args.dir)
+                      outfile='%s/q.txt' % args.dir)
 
     # TODO: Start iperf, webservers, etc.
     start_iperf(net)
@@ -217,7 +217,8 @@ def bufferbloat():
         avg_time = get_time_helper(h1, h2)
         measures.append(avg_time)
 
-        sleep(5) # every five second
+        sleep(5)
+        # every five second
         now = time()
         delta = now - start_time
         if delta > args.time:
@@ -230,7 +231,7 @@ def bufferbloat():
 
     print("Reporting...")
     f = open("./report.txt", "w+")
-    f.write("average: %s \n" % mean(measures))
+    f.write("average: %s \n" % avg(measures))
     f.write("std dev: %s \n" % stdev(measures))
     f.close()
 
