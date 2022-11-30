@@ -229,16 +229,19 @@ def bufferbloat():
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
 
-    print("Reporting...")
-    file_exists = os.path.exists('report.txt.txt')
-    if not file_exists:
-        f = open("./report.txt", "w+")
-    else:
-        f = open("./report.txt", "a")
+    # print("Reporting...")
+    # file_exists = os.path.exists('report.txt.txt')
+    # if not file_exists:
+    #     f = open("./report.txt", "w+")
+    # else:
+    #     f = open("./report.txt", "a")
+    #
+    # f.write("average: %s \n" % avg(measures))
+    # f.write("std dev: %s \n" % stdev(measures))
+    # f.close()
 
-    f.write("average: %s \n" % avg(measures))
-    f.write("std dev: %s \n" % stdev(measures))
-    f.close()
+    print("average: %s \n".format(avg(measures)))
+    print("std dev: %s \n".format(stdev(measures)))
 
     stop_tcpprobe()
     if qmon is not None:
