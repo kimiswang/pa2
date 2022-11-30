@@ -1,5 +1,7 @@
 #!/usr/bin/python
 "CSC458 Fall 2022 Programming Assignment 2: Bufferbloat"
+from statistics import mean
+from statistics import stdev
 
 from mininet.topo import Topo
 from mininet.node import CPULimitedHost
@@ -81,6 +83,12 @@ class BBTopo(Topo):
         switch = self.addSwitch('s0')
 
         # TODO: Add links with appropriate characteristics
+        h1 = hosts[0] # home computer, with large bandwidth 1 Gbps
+        h2 = hosts[1] # remote server, with small bandwidth 10 Mbps
+
+        self.addLink(h1, switch, bw=args.bw_host, delay='%sms' % args.delay, max_queue_size=args.maxq)
+        self.addLink(switch, h2, bw=args.bw_host, delay='%sms' % args.delay, max_queue_size=args.maxq)
+
 
 # Simple wrappers around monitoring utilities.  You are welcome to
 # contribute neatly written (using classes) monitoring scripts for
@@ -104,13 +112,19 @@ def start_qmon(iface, interval_sec=0.1, outfile="q.txt"):
 
 def start_iperf(net):
     h2 = net.get('h2')
-    print "Starting iperf server..."
+    print("Starting iperf server...")
     # For those who are curious about the -w 16m parameter, it ensures
     # that the TCP flow is not receiver window limited.  If it is,
     # there is a chance that the router buffer may not get filled up.
     server = h2.popen("iperf -s -w 16m")
     # TODO: Start the iperf client on h1.  Ensure that you create a
     # long lived TCP flow. You may need to redirect iperf's stdout to avoid blocking.
+
+    h1 = net.get('h1')
+
+    h1.popen("iperf -c %s -t %s > %s/iperf.out" % (h2.IP(), args.time, args.dir), shell=True)
+    # redirect iperf's stdout
+
 
 def start_webserver(net):
     h1 = net.get('h1')
@@ -129,8 +143,23 @@ def start_ping(net):
     # Note that if the command prints out a lot of text to stdout, it will block
     # until stdout is read. You can avoid this by runnning popen.communicate() or
     # redirecting stdout
-    h1 = net.get('h1')
-    popen = h1.popen("echo '' > %s/ping.txt"%(args.dir), shell=True)
+
+    h1 = net.get("h1")
+    h2 = net.get("h2")
+    popen = h1.popen("ping -c %s -i 0.1 %s > %s/ping.txt" % (args.time * 10, h2.IP(), args.dir), shell=True)
+
+
+def get_time_helper(h1, h2):
+    total = 0
+    # sample the transfer time 3 times
+    fetch = "curl -o /dev/null -s -w %{time_total} "+h1.IP()+"/http/index.html"
+    for i in range(3):
+        total += float(h2.popen(fetch).communicate()[0])
+
+    average = total/3
+
+    return average
+
 
 def bufferbloat():
     if not os.path.exists(args.dir):
@@ -158,13 +187,13 @@ def bufferbloat():
     # interface?  The interface numbering starts with 1 and increases.
     # Depending on the order you add links to your network, this
     # number may be 1 or 2.  Ensure you use the correct number.
-    #
-    # qmon = start_qmon(iface='s0-eth2',
-    #                  outfile='%s/q.txt' % (args.dir))
-    qmon = None
+
+    qmon = start_qmon(iface='s0-eth2',
+                     outfile='%s/q.txt' % args.dir)
 
     # TODO: Start iperf, webservers, etc.
-    # start_iperf(net)
+    start_iperf(net)
+    start_webserver(net)
 
     # Hint: The command below invokes a CLI which you can use to
     # debug.  It allows you to run arbitrary commands inside your
@@ -179,19 +208,33 @@ def bufferbloat():
     # spawned on host h1 (not from google!)
     # Hint: have a separate function to do this and you may find the
     # loop below useful.
+
+    h1 = net.get("h1")
+    h2 = net.get("h2")
+    measures = [] # record time
+
     start_time = time()
     while True:
         # do the measurement (say) 3 times.
-        sleep(1)
+        avg_time = get_time_helper(h1, h2)
+        measures.append(avg_time)
+
+        sleep(5) # every five second
         now = time()
         delta = now - start_time
         if delta > args.time:
             break
-        print "%.1fs left..." % (args.time - delta)
+        print( "%.1fs left..." % (args.time - delta))
 
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
+
+    print("Reporting...")
+    f = open("./report.txt", "w+")
+    f.write("average: %s \n" % mean(measures))
+    f.write("std dev: %s \n" % stdev(measures))
+    f.close()
 
     stop_tcpprobe()
     if qmon is not None:
@@ -200,6 +243,7 @@ def bufferbloat():
     # Ensure that all processes you create within Mininet are killed.
     # Sometimes they require manual killing.
     Popen("pgrep -f webserver.py | xargs kill -9", shell=True).wait()
+
 
 if __name__ == "__main__":
     bufferbloat()
