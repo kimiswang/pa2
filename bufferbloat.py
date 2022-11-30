@@ -209,7 +209,8 @@ def bufferbloat():
 
     h1 = net.get("h1")
     h2 = net.get("h2")
-    measures = [] # record time
+    measures = []
+    # record time
 
     start_time = time()
     while True:
@@ -229,19 +230,17 @@ def bufferbloat():
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
 
-    # print("Reporting...")
-    # file_exists = os.path.exists('report.txt.txt')
-    # if not file_exists:
-    #     f = open("./report.txt", "w+")
-    # else:
-    #     f = open("./report.txt", "a")
-    #
-    # f.write("average: %s \n" % avg(measures))
-    # f.write("std dev: %s \n" % stdev(measures))
-    # f.close()
+    print("Reporting...")
+    file_exists = os.path.exists('report.txt')
+    if not file_exists:
+        f = open("./report.txt", "w+")
+    else:
+        f = open("./report.txt", "a")
 
-    print("average: %s \n".format(avg(measures)))
-    print("std dev: %s \n".format(stdev(measures)))
+    f.write("q size: %s \n" % args.dir)
+    f.write("average: %s \n" % avg(measures))
+    f.write("std dev: %s \n" % stdev(measures))
+    f.close()
 
     stop_tcpprobe()
     if qmon is not None:
