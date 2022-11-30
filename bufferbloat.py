@@ -191,6 +191,7 @@ def bufferbloat():
 
     # TODO: Start iperf, webservers, etc.
     start_iperf(net)
+    start_ping(net)
     start_webserver(net)
 
     # Hint: The command below invokes a CLI which you can use to
