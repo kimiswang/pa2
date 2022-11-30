@@ -230,7 +230,12 @@ def bufferbloat():
     # README and explain.
 
     print("Reporting...")
-    f = open("./report.txt", "w+")
+    file_exists = os.path.exists('report.txt.txt')
+    if not file_exists:
+        f = open("./report.txt", "w+")
+    else:
+        f = open("./report.txt", "a")
+
     f.write("average: %s \n" % avg(measures))
     f.write("std dev: %s \n" % stdev(measures))
     f.close()
