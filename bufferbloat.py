@@ -1,7 +1,5 @@
 #!/usr/bin/python
 "CSC458 Fall 2022 Programming Assignment 2: Bufferbloat"
-from statistics import mean
-from statistics import stdev
 
 from mininet.topo import Topo
 from mininet.node import CPULimitedHost
