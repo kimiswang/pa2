@@ -87,7 +87,7 @@ class BBTopo(Topo):
         h2 = hosts[1] # remote server, with small bandwidth 10 Mbps
 
         self.addLink(h1, switch, bw=args.bw_host, delay='%sms' % args.delay, max_queue_size=args.maxq)
-        self.addLink(switch, h2, bw=args.bw_host, delay='%sms' % args.delay, max_queue_size=args.maxq)
+        self.addLink(switch, h2, bw=args.bw_net, delay='%sms' % args.delay, max_queue_size=args.maxq)
 
 
 # Simple wrappers around monitoring utilities.  You are welcome to
